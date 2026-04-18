@@ -1,0 +1,39 @@
+# === Compilação (objetos e binários) ===
+*.o
+*.ppu
+*.compiled
+*.or
+*.a
+*.so
+*.dll
+*.exe
+*.dylib
+
+# === Arquivos temporários / backup ===
+*~
+*.bak
+*.tmp
+*.lrs~
+*.pas~
+*.lfm~
+
+# === Configurações locais do Lazarus ===
+*.lpi.user
+*.lps
+*.lps~
+*.lpi.bak
+
+# === Cache / estado de build ===
+lib/
+backup/
+*.rst
+*.lrt
+
+# === Debug ===
+*.dbg
+
+# === macOS ===
+.DS_Store
+
+# === Windows ===
+Thumbs.db
