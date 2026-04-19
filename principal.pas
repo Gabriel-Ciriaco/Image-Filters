@@ -454,7 +454,7 @@ var
 begin
   DesativarSobel;
 
-  S := '';
+  S := '128';
   if InputQuery('Definir Limiar', 'Digite o valor do Limiar:', S) then
   begin
     t :=  StrToIntDef(S, 128);
