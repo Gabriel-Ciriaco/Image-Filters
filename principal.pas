@@ -472,7 +472,7 @@ begin
   Button1.Top := (Image1.Top + Image1.Height) div 2;
 
   EditMagnitude.Left := (Image1.Left + Image1.Width) + Image1.Width div 6;
-  EditDirecao.Left := (Image1.Left + Image1.Width) + Image1.Width div 6 + EditMagnitude.Width;
+  EditDirecao.Left := EditMagnitude.Left + EditMagnitude.Width;
 
   EditMagnitude.Top := Image1.Top + Image1.Top div 2;
   EditDirecao.Top := Image1.Top + Image1.Top div 2;
