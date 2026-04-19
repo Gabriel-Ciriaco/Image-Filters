@@ -5,7 +5,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, Menus, Math,
-  Buttons, StdCtrls, ExtDlgs, Windows;
+  Buttons, StdCtrls, ExtDlgs, ComCtrls, Spin, Windows;
 
 type
 
@@ -19,10 +19,12 @@ type
     Image2: TImage;
     MainMenu1: TMainMenu;
     Arquivo: TMenuItem;
+    MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
+    MenuItem2: TMenuItem;
     Operacoes: TMenuItem;
     Abrir: TMenuItem;
     Salvar: TMenuItem;
@@ -34,8 +36,6 @@ type
     OpenDialog1: TOpenDialog;
     SavePictureDialog1: TSavePictureDialog;
     procedure Button1Click(Sender: TObject);
-    procedure EditMagnitudeChange(Sender: TObject);
-    procedure Image1Click(Sender: TObject);
     procedure Image2MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
       );
     procedure MenuItem10Click(Sender: TObject);
@@ -53,8 +53,10 @@ type
     procedure Binarizacao;
     procedure FiltroLaplaciano;
     procedure BordaSobel;
-    procedure Compressao;
-    procedure Limiarizacao;
+    procedure Compressao(c: Float; y: Float);
+    procedure Limiarizacao(t: Integer);
+    procedure MenuItem1Click(Sender: TObject);
+    procedure MenuItem2Click(Sender: TObject);
     procedure SalvarClick(Sender: TObject);
     procedure SairClick(Sender: TObject);
     procedure MenuItem6Click(Sender: TObject);
@@ -62,9 +64,10 @@ type
     procedure MenuItem8Click(Sender: TObject);
     procedure MenuItem9Click(Sender: TObject);
   private
-    SobelAtivo : Boolean;
     magnitudes : array of array of Integer; // Array dinâmico com as magnitudes.
     magDirecoes : array of array of Double;
+
+    SobelAtivo : Boolean;
     procedure DesativarSobel;
 
   public
@@ -259,8 +262,8 @@ begin
       ImS[i, j] := Lapl;
     end;
 
-  // Normaliazação da imagem. Pegamos o maior valor e deixamos como 255.
-  // É uma regra de três pixel * (255 / max).
+  // Normalização da imagem. Pegamos o maior valor e deixamos como 255.
+  // É uma regra de três: pixel * (255 / max).
   max := 0;
   for i := 0 to ImgWidth - 1 do
    for j := 0 to ImgHeight - 1 do
@@ -291,6 +294,8 @@ begin
     end;
 
 
+  minMag := 255;
+  maxMag := 0;
   // Cálculo das bordas de sobel.
   for i := 1 to ImgWidth - 2 do
    for j := 1 to ImgHeight - 2 do
@@ -304,26 +309,21 @@ begin
 
       magnitudes[i , j] := Round(Sqrt(SobelX * SobelX + SobelY * SobelY));
 
+      // Encontrar o mínimo e máximo da magnitude.
+      if minMag > magnitudes[i, j] then minMag := magnitudes[i, j];
+      if maxMag < magnitudes[i, j] then maxMag := magnitudes[i, j];
+
       magDirecoes[i, j] := ArcTan2(SobelX, SobelY);
     end;
 
-  // Normalização com mínimo e máximo da magnitude.
-  minMag := magnitudes[1, 1];
-  maxMag := magnitudes[1, 1];
-  for i := 1 to ImgWidth - 3 do
-   for j := 1 to ImgHeight - 3 do
-    begin
-      if minMag > magnitudes[i, j] then minMag := magnitudes[i, j];
-      if maxMag < magnitudes[i, j] then maxMag := magnitudes[i, j];
-    end;
 
   diffMag := maxMag - minMag;
 
-  // Previnir divisão por zero.
-  if diffMag = 0 then diffMag := 1;
+  if diffMag = 0 then diffMag := 1; // Previnir divisão por zero.
 
-  for i := 0 to ImgWidth - 3 do
-   for j := 0 to ImgHeight - 3 do
+  // Normalização com mínimo e máximo da magnitude
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
     begin
       ImS[i, j] := Round(255 * ((magnitudes[i, j] - minMag) / diffMag));
 
@@ -332,16 +332,40 @@ begin
 
 end;
 
-
-procedure TForm1.SalvarClick(Sender: TObject);
+procedure TForm1.Compressao(c: Float; y: Float);
+var
+   i, j : Integer;
+   r, S : Double;
 begin
-  SavePictureDialog1.DefaultExt := 'bmp';
-  if (SavePictureDialog1.Execute()) then Image1.Picture.SaveToFile(SavePictureDialog1.FileName);
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      r := ImE[i , j] / 255.0;  // Valor do pixel normalizado.
+
+      S := c * Power(r, y);
+
+      // Deixa S entre 0 e 1.
+      if S > 1.0 then S := 1.0;
+      if S < 0.0 then S := 0.0;
+
+      ImS[i, j] := Round(S * 255); // Valor reajustado na escala [0, 255].
+
+      Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
 end;
 
-procedure TForm1.SairClick(Sender: TObject);
+procedure TForm1.Limiarizacao(t: Integer);
+var
+   i, j : Integer;
 begin
-  close();
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      if ImE[i, j] < t then ImS[i, j] := 0;
+      if ImE[i, j] >= t then ImS[i, j] := ImE[i, j];
+
+      Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
 end;
 
 procedure TForm1.MenuItem6Click(Sender: TObject);
@@ -366,31 +390,6 @@ procedure TForm1.MenuItem9Click(Sender: TObject);
 begin
   DesativarSobel;
   FiltroMediana;
-end;
-
-procedure TForm1.Image1Click(Sender: TObject);
-begin
-end;
-
-procedure TForm1.Image2MouseMove(Sender: TObject; Shift: TShiftState; X,
-  Y: Integer);
-begin
-  if not SobelAtivo then Exit;
-
-  // Verifica se o mouse está dentro dos limites calculados (evitar erros de índice)
-  if (X >= 1) and (X <= ImgWidth - 2) and (Y >= 1) and (Y <= ImgHeight - 2) then
-  begin
-    if (magnitudes <> nil) and (magDirecoes <> nil) then
-       begin
-         EditMagnitude.Text := 'Magnitude: ' + IntToStr(magnitudes[X, Y]);
-         EditDirecao.Text := 'Direção: ' + FloatToStrF(magDirecoes[X, Y], ffFixed, 7, 2);
-       end;
-  end
-  else
-  begin
-    EditMagnitude.Text := 'Magnitude: -';
-    EditDirecao.Text := 'Direção: -';
-  end;
 end;
 
 procedure TForm1.MenuItem10Click(Sender: TObject);
@@ -419,14 +418,76 @@ begin
 
   BordaSobel;
 end;
-procedure TForm1.Compressao;
-begin;
 
+function CorrigirDecimal(const S: String): String;
+begin
+  Result := StringReplace(S, ',', FormatSettings.DecimalSeparator, [rfReplaceAll]);
+  Result := StringReplace(Result, '.', FormatSettings.DecimalSeparator, [rfReplaceAll]);
 end;
 
-procedure TForm1.Limiarizacao;
-begin;
+procedure TForm1.MenuItem1Click(Sender: TObject);
+var
+   strValues : array[0..1] of String;
+   c, y : Float;
+begin
+  DesativarSobel;
 
+  // Usamos o separador padrão do sistema do usuário (, ou .).
+  strValues[0] := '1' + FormatSettings.DecimalSeparator + '0';
+  strValues[1] := '0' + FormatSettings.DecimalSeparator + '6';
+
+  if InputQuery('Definir Compressao',
+     ['Digite o valor de C:', 'Digite o valor de Y:'], strValues) then
+     begin
+       // Aceitar , ou . para os decimais.
+       c := StrToFloatDef(CorrigirDecimal(strValues[0]), 1.0);
+       y := StrToFloatDef(CorrigirDecimal(strValues[1]), 0.6);
+
+       Compressao(c, y);
+     end;
+end;
+
+procedure TForm1.MenuItem2Click(Sender: TObject);
+var
+   S : String;
+   t : Integer;
+begin
+  DesativarSobel;
+
+  S := '';
+  if InputQuery('Definir Limiar', 'Digite o valor do Limiar:', S) then
+  begin
+    t :=  StrToIntDef(S, 128);
+
+    Limiarizacao(t);
+  end;
+end;
+
+// Botões Adicionais (Ajudam nas Operações com Imagens).
+procedure TForm1.Image2MouseMove(Sender: TObject; Shift: TShiftState;
+                                                         X, Y: Integer);
+var
+   magDirecao : Float;
+begin
+  if not SobelAtivo then Exit;
+
+  // Verifica se o mouse está dentro dos limites calculados (evitar erros de índice)
+  if (X >= 1) and (X <= ImgWidth - 2) and (Y >= 1) and (Y <= ImgHeight - 2) then
+  begin
+    if (magnitudes <> nil) and (magDirecoes <> nil) then
+       begin
+         magDirecao := abs(magDirecoes[X, Y] * (180 / PI));
+         EditMagnitude.Text := 'Magnitude: ' + IntToStr(magnitudes[X, Y]);
+         EditDirecao.Text := 'Direção: ' +
+                             FloatToStrF(magDirecao, ffFixed, 7, 2) + 'º';
+
+       end;
+  end
+  else
+  begin
+    EditMagnitude.Text := 'Magnitude: -';
+    EditDirecao.Text := 'Direção: -';
+  end;
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -439,16 +500,14 @@ begin
           ImE[i, j] := ImS[i, j];
 end;
 
-procedure TForm1.EditMagnitudeChange(Sender: TObject);
-begin
-
-end;
-
+// Botões de Arquivo.
 procedure TForm1.AbrirClick(Sender: TObject);
 begin
   if (OpenDialog1.Execute()) then Image1.Picture.LoadFromFile(OpenDialog1.Filename);
   // Reseta a Imagem 2 se ela estiver preenchida.
   if (Image2.Picture.Graphic <> nil) then Image2.Picture.Clear;
+
+  DesativarSobel;
 
   Image1.AutoSize := True;
 
@@ -471,12 +530,23 @@ begin
   Button1.Left := (Image1.Left + Image1.Width) + Image1.Width div 4;
   Button1.Top := (Image1.Top + Image1.Height) div 2;
 
-  EditMagnitude.Left := (Image1.Left + Image1.Width) + Image1.Width div 6;
+  EditMagnitude.Left := Button1.Left - EditMagnitude.Width +Button1.Width div 2;
   EditDirecao.Left := EditMagnitude.Left + EditMagnitude.Width;
 
   EditMagnitude.Top := Image1.Top + Image1.Top div 2;
   EditDirecao.Top := Image1.Top + Image1.Top div 2;
 
+end;
+
+procedure TForm1.SalvarClick(Sender: TObject);
+begin
+  SavePictureDialog1.DefaultExt := 'bmp';
+  if (SavePictureDialog1.Execute()) then Image1.Picture.SaveToFile(SavePictureDialog1.FileName);
+end;
+
+procedure TForm1.SairClick(Sender: TObject);
+begin
+  close();
 end;
 
 end.

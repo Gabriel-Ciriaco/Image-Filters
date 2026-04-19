@@ -14,14 +14,12 @@ object Form1: TForm1
     Height = 240
     Top = 60
     Width = 320
-    OnClick = Image1Click
   end
   object Image2: TImage
     Left = 770
     Height = 240
     Top = 60
     Width = 320
-    OnClick = Image1Click
     OnMouseMove = Image2MouseMove
   end
   object Button1: TButton
@@ -38,16 +36,17 @@ object Form1: TForm1
     Height = 28
     Top = 376
     Width = 100
+    ReadOnly = True
     TabOrder = 1
     Text = 'Magnitude: -'
     Visible = False
-    OnChange = EditMagnitudeChange
   end
   object EditDirecao: TEdit
     Left = 600
     Height = 28
     Top = 376
-    Width = 100
+    Width = 115
+    ReadOnly = True
     TabOrder = 2
     Text = 'Direção: -'
     Visible = False
@@ -103,6 +102,14 @@ object Form1: TForm1
       object MenuItem13: TMenuItem
         Caption = 'Borda de Sobel'
         OnClick = MenuItem13Click
+      end
+      object MenuItem1: TMenuItem
+        Caption = 'Compressão'
+        OnClick = MenuItem1Click
+      end
+      object MenuItem2: TMenuItem
+        Caption = 'Limiarização'
+        OnClick = MenuItem2Click
       end
     end
   end
