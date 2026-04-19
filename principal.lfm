@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 395
+  Left = 386
   Height = 911
-  Top = 81
+  Top = 122
   Width = 1712
   Caption = 'Form1'
   ClientHeight = 911
@@ -22,6 +22,7 @@ object Form1: TForm1
     Top = 60
     Width = 320
     OnClick = Image1Click
+    OnMouseMove = Image2MouseMove
   end
   object Button1: TButton
     Left = 552
@@ -32,25 +33,44 @@ object Form1: TForm1
     TabOrder = 0
     OnClick = Button1Click
   end
+  object EditMagnitude: TEdit
+    Left = 496
+    Height = 28
+    Top = 376
+    Width = 100
+    TabOrder = 1
+    Text = 'Magnitude: -'
+    Visible = False
+    OnChange = EditMagnitudeChange
+  end
+  object EditDirecao: TEdit
+    Left = 600
+    Height = 28
+    Top = 376
+    Width = 100
+    TabOrder = 2
+    Text = 'Direção: -'
+    Visible = False
+  end
   object MainMenu1: TMainMenu
     Left = 410
     Top = 550
-    object MenuItem1: TMenuItem
+    object Arquivo: TMenuItem
       Caption = 'Arquivo'
-      object MenuItem3: TMenuItem
+      object Abrir: TMenuItem
         Caption = 'Abrir'
-        OnClick = MenuItem3Click
+        OnClick = AbrirClick
       end
-      object MenuItem4: TMenuItem
+      object Salvar: TMenuItem
         Caption = 'Salvar'
-        OnClick = MenuItem4Click
+        OnClick = SalvarClick
       end
-      object MenuItem5: TMenuItem
+      object Sair: TMenuItem
         Caption = 'Sair'
-        OnClick = MenuItem5Click
+        OnClick = SairClick
       end
     end
-    object MenuItem2: TMenuItem
+    object Operacoes: TMenuItem
       Caption = 'Operações'
       object MenuItem6: TMenuItem
         Caption = 'Converter para Cinza'
@@ -79,6 +99,10 @@ object Form1: TForm1
       object MenuItem11: TMenuItem
         Caption = 'Filtro Laplaciano Vizinhança 4'
         OnClick = MenuItem11Click
+      end
+      object MenuItem13: TMenuItem
+        Caption = 'Borda de Sobel'
+        OnClick = MenuItem13Click
       end
     end
   end
