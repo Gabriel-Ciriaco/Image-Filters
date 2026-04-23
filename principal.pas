@@ -313,7 +313,7 @@ begin
       if minMag > magnitudes[i, j] then minMag := magnitudes[i, j];
       if maxMag < magnitudes[i, j] then maxMag := magnitudes[i, j];
 
-      magDirecoes[i, j] := ArcTan2(SobelX, SobelY);
+      magDirecoes[i, j] := ArcTan2(SobelY, SobelX);
     end;
 
 
@@ -476,7 +476,10 @@ begin
   begin
     if (magnitudes <> nil) and (magDirecoes <> nil) then
        begin
-         magDirecao := abs(magDirecoes[X, Y] * (180 / PI));
+         magDirecao := magDirecoes[X, Y] * (180 / PI);
+
+         if magDirecao < 0 then magDirecao += 360;
+
          EditMagnitude.Text := 'Magnitude: ' + IntToStr(magnitudes[X, Y]);
          EditDirecao.Text := 'Direção: ' +
                              FloatToStrF(magDirecao, ffFixed, 7, 2) + 'º';
