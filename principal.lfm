@@ -1,59 +1,58 @@
 object Form1: TForm1
   Left = 386
-  Height = 911
+  Height = 689
   Top = 122
-  Width = 1712
+  Width = 1155
   Caption = 'Form1'
-  ClientHeight = 911
-  ClientWidth = 1712
-  DesignTimePPI = 120
+  ClientHeight = 689
+  ClientWidth = 1155
   Menu = MainMenu1
   LCLVersion = '4.4.0.0'
   object Image1: TImage
-    Left = 120
-    Height = 240
-    Top = 60
-    Width = 320
+    Left = 96
+    Height = 192
+    Top = 48
+    Width = 256
   end
   object Image2: TImage
-    Left = 770
-    Height = 240
-    Top = 60
-    Width = 320
+    Left = 616
+    Height = 192
+    Top = 48
+    Width = 256
     OnMouseMove = Image2MouseMove
   end
   object Button1: TButton
-    Left = 552
-    Height = 31
-    Top = 168
-    Width = 94
+    Left = 442
+    Height = 25
+    Top = 134
+    Width = 75
     Caption = '<=='
     TabOrder = 0
     OnClick = Button1Click
   end
   object EditMagnitude: TEdit
-    Left = 496
-    Height = 28
-    Top = 376
-    Width = 100
+    Left = 397
+    Height = 23
+    Top = 301
+    Width = 80
     ReadOnly = True
     TabOrder = 1
     Text = 'Magnitude: -'
     Visible = False
   end
   object EditDirecao: TEdit
-    Left = 600
-    Height = 28
-    Top = 376
-    Width = 115
+    Left = 480
+    Height = 23
+    Top = 301
+    Width = 92
     ReadOnly = True
     TabOrder = 2
     Text = 'Direção: -'
     Visible = False
   end
   object MainMenu1: TMainMenu
-    Left = 410
-    Top = 550
+    Left = 328
+    Top = 440
     object Arquivo: TMenuItem
       Caption = 'Arquivo'
       object Abrir: TMenuItem
@@ -74,6 +73,10 @@ object Form1: TForm1
       object MenuItem6: TMenuItem
         Caption = 'Converter para Cinza'
         OnClick = MenuItem6Click
+      end
+      object MenuItem3: TMenuItem
+        Caption = 'Inverter Cinza'
+        OnClick = MenuItem3Click
       end
       object MenuItem12: TMenuItem
         Caption = 'EqualizacaoHistograma'
@@ -114,11 +117,11 @@ object Form1: TForm1
     end
   end
   object OpenDialog1: TOpenDialog
-    Left = 450
-    Top = 550
+    Left = 360
+    Top = 440
   end
   object SavePictureDialog1: TSavePictureDialog
-    Left = 490
-    Top = 550
+    Left = 392
+    Top = 440
   end
 end

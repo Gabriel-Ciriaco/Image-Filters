@@ -25,6 +25,7 @@ type
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
     Operacoes: TMenuItem;
     Abrir: TMenuItem;
     Salvar: TMenuItem;
@@ -46,6 +47,7 @@ type
 
     // Operações
     procedure ConverterCinza;
+    procedure InverterCinza;
     procedure EqualizacaoImagem;
     procedure AdicionarRuido;
     procedure FiltroMedia;
@@ -57,6 +59,7 @@ type
     procedure Limiarizacao(t: Integer);
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
     procedure SalvarClick(Sender: TObject);
     procedure SairClick(Sender: TObject);
     procedure MenuItem6Click(Sender: TObject);
@@ -107,6 +110,19 @@ begin
 
             ImS[i, j] := k;
             Image2.Canvas.Pixels[i, j] := RGB(k, k, k);
+          end;
+end;
+
+procedure TForm1.InverterCinza;
+var
+   i, j : Integer;
+begin
+  for i := 0 to ImgWidth - 1 do
+      for j := 0 to ImgHeight - 1 do
+          begin
+            ImS[i, j] := 255 - ImE[i, j];
+
+            Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
           end;
 end;
 
@@ -461,6 +477,12 @@ begin
 
     Limiarizacao(t);
   end;
+end;
+
+procedure TForm1.MenuItem3Click(Sender: TObject);
+begin
+  DesativarSobel;
+  InverterCinza;
 end;
 
 // Botões Adicionais (Ajudam nas Operações com Imagens).
