@@ -13,6 +13,8 @@ object Form1: TForm1
     Height = 192
     Top = 48
     Width = 256
+    Proportional = True
+    Stretch = True
   end
   object Image2: TImage
     Left = 616
@@ -125,6 +127,10 @@ object Form1: TForm1
       object MenuItemPontoMedio: TMenuItem
         Caption = 'Filtro Ponto Médio'
         OnClick = MenuItemPontoMedioClick
+      end
+      object MenuItemPseudoCores: TMenuItem
+        Caption = 'Pseudo Cores'
+        OnClick = MenuItemPseudoCoresClick
       end
     end
   end

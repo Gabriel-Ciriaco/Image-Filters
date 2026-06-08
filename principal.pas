@@ -26,6 +26,7 @@ type
     MenuItem13: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
+    MenuItemPseudoCores: TMenuItem;
     MenuItemPontoMedio: TMenuItem;
     MenuItemMaximo: TMenuItem;
     MenuItemMinimo: TMenuItem;
@@ -63,6 +64,8 @@ type
     procedure BordaSobel;
     procedure Compressao(c: Float; y: Float);
     procedure Limiarizacao(t: Integer);
+    procedure MenuItemPseudoCoresClick(Sender: TObject);
+    procedure PseudoCores;
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
@@ -478,6 +481,52 @@ begin
       if ImE[i, j] >= t then ImS[i, j] := ImE[i, j];
 
       Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
+end;
+
+procedure TForm1.MenuItemPseudoCoresClick(Sender: TObject);
+begin
+  DesativarSobel;
+  PseudoCores;
+end;
+
+procedure TForm1.PseudoCores;
+var
+  i, j, v : Integer;
+  R, G, B : Integer;
+begin
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      v := ImE[i, j]; // Valor do pixel em cinza (0-255)
+
+      // Preto (0) para Azul (64) para Ciano (128) para Verde (192) para Amarelo (255)
+      if v < 64 then        // Preto para Azul
+        begin
+          R := 0;
+          G := 0;
+          B := Round(v * 255 / 64);
+        end
+      else if v < 128 then  // Azul para Ciano
+        begin
+          R := 0;
+          G := Round((v - 64) * 255 / 64);
+          B := 255;
+        end
+      else if v < 192 then  // Ciano para Verde
+        begin
+          R := 0;
+          G := 255;
+          B := Round((192 - v) * 255 / 64);
+        end
+      else                  // Verde para Amarelo
+        begin
+          R := Round((v - 192) * 255 / 63);
+          G := 255;
+          B := 0;
+        end;
+
+      Image2.Canvas.Pixels[i, j] := RGB(R, G, B);
     end;
 end;
 
