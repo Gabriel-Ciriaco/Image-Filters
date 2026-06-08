@@ -7,7 +7,7 @@ object Form1: TForm1
   ClientHeight = 689
   ClientWidth = 1155
   Menu = MainMenu1
-  LCLVersion = '4.4.0.0'
+  LCLVersion = '4.6.0.0'
   object Image1: TImage
     Left = 96
     Height = 192
@@ -113,6 +113,18 @@ object Form1: TForm1
       object MenuItem2: TMenuItem
         Caption = 'Limiarização'
         OnClick = MenuItem2Click
+      end
+      object MenuItemMinimo: TMenuItem
+        Caption = 'Filtro Mínimo'
+        OnClick = MenuItemMinimoClick
+      end
+      object MenuItemMaximo: TMenuItem
+        Caption = 'Filtro Máximo'
+        OnClick = MenuItemMaximoClick
+      end
+      object MenuItemPontoMedio: TMenuItem
+        Caption = 'Filtro Ponto Médio'
+        OnClick = MenuItemPontoMedioClick
       end
     end
   end

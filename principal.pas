@@ -26,6 +26,9 @@ type
     MenuItem13: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
+    MenuItemPontoMedio: TMenuItem;
+    MenuItemMaximo: TMenuItem;
+    MenuItemMinimo: TMenuItem;
     Operacoes: TMenuItem;
     Abrir: TMenuItem;
     Salvar: TMenuItem;
@@ -52,6 +55,9 @@ type
     procedure AdicionarRuido;
     procedure FiltroMedia;
     procedure FiltroMediana;
+    procedure FiltroMinimo;
+    procedure FiltroMaximo;
+    procedure FiltroPontoMedio;
     procedure Binarizacao;
     procedure FiltroLaplaciano;
     procedure BordaSobel;
@@ -60,6 +66,9 @@ type
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
+    procedure MenuItemMaximoClick(Sender: TObject);
+    procedure MenuItemMinimoClick(Sender: TObject);
+    procedure MenuItemPontoMedioClick(Sender: TObject);
     procedure SalvarClick(Sender: TObject);
     procedure SairClick(Sender: TObject);
     procedure MenuItem6Click(Sender: TObject);
@@ -243,6 +252,94 @@ begin
 
       ImS[i, j] := vetor[4]; // Valor Mediano
       Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
+end;
+
+procedure TForm1.FiltroMinimo;
+var
+   i, j, k, minVal : Integer;
+   vizinhos : array[0..8] of Integer;
+begin
+  for i := 1 to ImgWidth - 2 do
+   for j := 1 to ImgHeight - 2 do
+    begin
+      vizinhos[0] := ImE[i - 1, j - 1];
+      vizinhos[1] := ImE[i,     j - 1];
+      vizinhos[2] := ImE[i + 1, j - 1];
+      vizinhos[3] := ImE[i - 1, j    ];
+      vizinhos[4] := ImE[i,     j    ];
+      vizinhos[5] := ImE[i + 1, j    ];
+      vizinhos[6] := ImE[i - 1, j + 1];
+      vizinhos[7] := ImE[i,     j + 1];
+      vizinhos[8] := ImE[i + 1, j + 1];
+
+      minVal := vizinhos[0];
+      for k := 1 to 8 do
+        if vizinhos[k] < minVal then minVal := vizinhos[k];
+
+      ImS[i, j] := minVal;
+      Image2.Canvas.Pixels[i, j] := RGB(minVal, minVal, minVal);
+    end;
+end;
+
+procedure TForm1.FiltroMaximo;
+var
+   i, j, k, maxVal : Integer;
+   vizinhos : array[0..8] of Integer;
+begin
+  for i := 1 to ImgWidth - 2 do
+   for j := 1 to ImgHeight - 2 do
+    begin
+      vizinhos[0] := ImE[i - 1, j - 1];
+      vizinhos[1] := ImE[i,     j - 1];
+      vizinhos[2] := ImE[i + 1, j - 1];
+      vizinhos[3] := ImE[i - 1, j    ];
+      vizinhos[4] := ImE[i,     j    ];
+      vizinhos[5] := ImE[i + 1, j    ];
+      vizinhos[6] := ImE[i - 1, j + 1];
+      vizinhos[7] := ImE[i,     j + 1];
+      vizinhos[8] := ImE[i + 1, j + 1];
+
+      maxVal := vizinhos[0];
+      for k := 1 to 8 do
+        if vizinhos[k] > maxVal then maxVal := vizinhos[k];
+
+      ImS[i, j] := maxVal;
+      Image2.Canvas.Pixels[i, j] := RGB(maxVal, maxVal, maxVal);
+    end;
+end;
+
+procedure TForm1.FiltroPontoMedio;
+var
+   i, j, k, minVal, maxVal : Integer;
+   vizinhos : array[0..8] of Integer;
+   pontoMedio : Integer;
+begin
+  for i := 1 to ImgWidth - 2 do
+   for j := 1 to ImgHeight - 2 do
+    begin
+      vizinhos[0] := ImE[i - 1, j - 1];
+      vizinhos[1] := ImE[i,     j - 1];
+      vizinhos[2] := ImE[i + 1, j - 1];
+      vizinhos[3] := ImE[i - 1, j    ];
+      vizinhos[4] := ImE[i,     j    ];
+      vizinhos[5] := ImE[i + 1, j    ];
+      vizinhos[6] := ImE[i - 1, j + 1];
+      vizinhos[7] := ImE[i,     j + 1];
+      vizinhos[8] := ImE[i + 1, j + 1];
+
+      minVal := vizinhos[0];
+      maxVal := vizinhos[0];
+      for k := 1 to 8 do
+        begin
+          if vizinhos[k] < minVal then minVal := vizinhos[k];
+          if vizinhos[k] > maxVal then maxVal := vizinhos[k];
+        end;
+
+      pontoMedio := (minVal + maxVal) div 2;
+
+      ImS[i, j] := pontoMedio;
+      Image2.Canvas.Pixels[i, j] := RGB(pontoMedio, pontoMedio, pontoMedio);
     end;
 end;
 
@@ -483,6 +580,24 @@ procedure TForm1.MenuItem3Click(Sender: TObject);
 begin
   DesativarSobel;
   InverterCinza;
+end;
+
+procedure TForm1.MenuItemMaximoClick(Sender: TObject);
+begin
+  DesativarSobel;
+  FiltroMaximo;
+end;
+
+procedure TForm1.MenuItemMinimoClick(Sender: TObject);
+begin
+  DesativarSobel;
+  FiltroMinimo;
+end;
+
+procedure TForm1.MenuItemPontoMedioClick(Sender: TObject);
+begin
+  DesativarSobel;
+  FiltroPontoMedio;
 end;
 
 // Botões Adicionais (Ajudam nas Operações com Imagens).
