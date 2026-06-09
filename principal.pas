@@ -64,8 +64,10 @@ type
     procedure BordaSobel;
     procedure Compressao(c: Float; y: Float);
     procedure Limiarizacao(t: Integer);
+    procedure MenuItemEqualizacaoHSLClick(Sender: TObject);
     procedure MenuItemPseudoCoresClick(Sender: TObject);
     procedure PseudoCores;
+    procedure EqualizacaoHSL;
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
@@ -484,6 +486,12 @@ begin
     end;
 end;
 
+procedure TForm1.MenuItemEqualizacaoHSLClick(Sender: TObject);
+begin
+  DesativarSobel;
+  EqualizacaoHSL;
+end;
+
 procedure TForm1.MenuItemPseudoCoresClick(Sender: TObject);
 begin
   DesativarSobel;
@@ -525,6 +533,125 @@ begin
           G := 255;
           B := 0;
         end;
+
+      Image2.Canvas.Pixels[i, j] := RGB(R, G, B);
+    end;
+end;
+
+procedure TForm1.EqualizacaoHSL;
+var
+  i, j, k : Integer;
+  R, G, B  : Integer;
+  H, S, L  : Double;
+  Lint     : Integer;
+  histograma    : array[0..255] of Integer;
+  freqAcumulada : array[0..255] of Integer;
+
+  procedure RGBtoHSL(R, G, B: Integer; out H, S, L: Double);
+  var
+    Rn, Gn, Bn, Cmax, Cmin, Delta: Double;
+  begin
+    Rn := R / 255.0;
+    Gn := G / 255.0;
+    Bn := B / 255.0;
+
+    Cmax := Rn;
+    if Gn > Cmax then Cmax := Gn;
+    if Bn > Cmax then Cmax := Bn;
+
+    Cmin := Rn;
+    if Gn < Cmin then Cmin := Gn;
+    if Bn < Cmin then Cmin := Bn;
+
+    Delta := Cmax - Cmin;
+
+    L := (Cmax + Cmin) / 2.0;
+
+    // Saturação
+    if (Delta = 0) or (L = 0) or (L = 1) then
+      S := 0
+    else
+      S := Delta / (1 - Abs(2 * L - 1));
+
+    // Matiz
+    if Delta = 0 then
+      H := 0
+    else if Cmax = Rn then
+      begin
+        H := 60 * ((Gn - Bn) / Delta);
+        if H < 0 then H := H + 360;
+      end
+    else if Cmax = Gn then
+      H := 60 * (((Bn - Rn) / Delta) + 2)
+    else
+      H := 60 * (((Rn - Gn) / Delta) + 4);
+  end;
+
+  procedure HSLtoRGB(H, S, L: Double; out R, G, B: Integer);
+  var
+    C, X, M, Rn, Gn, Bn: Double;
+  begin
+    C := (1 - Abs(2 * L - 1)) * S;
+    X := C * (1 - Abs((H / 60) - Floor(H / 60 / 2) * 2 - 1));
+    M := L - C / 2;
+
+    if H < 60 then begin Rn := C; Gn := X; Bn := 0; end
+    else if H < 120 then begin Rn := X; Gn := C; Bn := 0; end
+    else if H < 180 then begin Rn := 0; Gn := C; Bn := X; end
+    else if H < 240 then begin Rn := 0; Gn := X; Bn := C; end
+    else if H < 300 then begin Rn := X; Gn := 0; Bn := C; end
+    else begin Rn := C; Gn := 0; Bn := X; end;
+
+    R := Round((Rn + M) * 255);
+    G := Round((Gn + M) * 255);
+    B := Round((Bn + M) * 255);
+
+    if R > 255 then R := 255;
+    if R < 0   then R := 0;
+    if G > 255 then G := 255;
+    if G < 0   then G := 0;
+    if B > 255 then B := 255;
+    if B < 0   then B := 0;
+  end;
+
+begin
+  for k := 0 to 255 do
+  begin
+    histograma[k]    := 0;
+    freqAcumulada[k] := 0;
+  end;
+
+  // Monta histograma do canal L
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      cor := Image1.Canvas.Pixels[i, j];
+      RGBtoHSL(GetRValue(cor), GetGValue(cor), GetBValue(cor), H, S, L);
+
+      Lint := Round(L * 255);
+      histograma[Lint] += 1;
+    end;
+
+  // Frequência acumulada
+  freqAcumulada[0] := histograma[0];
+  for k := 1 to 255 do
+    freqAcumulada[k] := freqAcumulada[k - 1] + histograma[k];
+
+  // Aplica equalização só no L e reconverte para RGB
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      cor := Image1.Canvas.Pixels[i, j];
+      RGBtoHSL(GetRValue(cor), GetGValue(cor), GetBValue(cor), H, S, L);
+
+      Lint := Round(L * 255);
+
+      // Equaliza o L
+      Lint := Round((255 * freqAcumulada[Lint]) / (ImgHeight * ImgWidth)) - 1;
+      if Lint < 0 then Lint := 0;
+      L := Lint / 255.0;
+
+      HSLtoRGB(H, S, L, R, G, B);
 
       Image2.Canvas.Pixels[i, j] := RGB(R, G, B);
     end;
