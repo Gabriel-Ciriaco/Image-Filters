@@ -26,6 +26,8 @@ type
     MenuItem13: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
+    Laplaciano8: TMenuItem;
+    MenuItemEqualizacaoHSL: TMenuItem;
     MenuItemPseudoCores: TMenuItem;
     MenuItemPontoMedio: TMenuItem;
     MenuItemMaximo: TMenuItem;
@@ -43,6 +45,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Image2MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
       );
+    procedure Laplaciano8Click(Sender: TObject);
     procedure MenuItem10Click(Sender: TObject);
     procedure MenuItem11Click(Sender: TObject);
     procedure MenuItem12Click(Sender: TObject);
@@ -61,6 +64,7 @@ type
     procedure FiltroPontoMedio;
     procedure Binarizacao;
     procedure FiltroLaplaciano;
+    procedure FiltroLaplaciano8;
     procedure BordaSobel;
     procedure Compressao(c: Float; y: Float);
     procedure Limiarizacao(t: Integer);
@@ -395,6 +399,39 @@ begin
       Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
     end;
 
+end;
+
+procedure TForm1.FiltroLaplaciano8;
+var
+   i, j, Lapl, max : Integer;
+begin
+  for i := 1 to ImgWidth - 2 do
+   for j := 1 to ImgHeight - 2 do
+    begin
+      Lapl := -ImE[i - 1, j - 1] - ImE[i, j - 1] - ImE[i + 1, j - 1]
+              -ImE[i - 1, j]                       - ImE[i + 1, j]
+              -ImE[i - 1, j + 1] - ImE[i, j + 1]  - ImE[i + 1, j + 1]
+              + 8 * ImE[i, j];
+
+      Lapl := abs(Lapl);
+
+      ImS[i, j] := Lapl;
+    end;
+
+  // Normalização
+  max := 0;
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    if (ImS[i, j] > max) then max := ImS[i, j];
+
+  if max = 0 then max := 1; // Prevenir divisão por zero
+
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      ImS[i, j] := ImS[i, j] * 255 div max;
+      Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
 end;
 
 procedure TForm1.BordaSobel;
@@ -804,6 +841,12 @@ begin
     EditMagnitude.Text := 'Magnitude: -';
     EditDirecao.Text := 'Direção: -';
   end;
+end;
+
+procedure TForm1.Laplaciano8Click(Sender: TObject);
+begin
+  DesativarSobel;
+  FiltroLaplaciano8;
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
