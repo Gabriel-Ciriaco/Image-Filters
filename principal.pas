@@ -27,6 +27,7 @@ type
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     Laplaciano8: TMenuItem;
+    MenuItemBinarizacaoOtsu: TMenuItem;
     MenuItemLimiarizacaoOtsu: TMenuItem;
     MenuItemEqualizacaoHSL: TMenuItem;
     MenuItemPseudoCores: TMenuItem;
@@ -69,12 +70,14 @@ type
     procedure BordaSobel;
     procedure Compressao(c: Float; y: Float);
     procedure Limiarizacao(t: Integer);
+    procedure MenuItemBinarizacaoOtsuClick(Sender: TObject);
     procedure MenuItemEqualizacaoHSLClick(Sender: TObject);
     procedure MenuItemLimiarizacaoOtsuClick(Sender: TObject);
     procedure MenuItemPseudoCoresClick(Sender: TObject);
     procedure PseudoCores;
     procedure EqualizacaoHSL;
     procedure LimiarizacaoOtsu;
+    procedure BinarizacaoOtsu;
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
@@ -526,6 +529,12 @@ begin
     end;
 end;
 
+procedure TForm1.MenuItemBinarizacaoOtsuClick(Sender: TObject);
+begin
+  DesativarSobel;
+  BinarizacaoOtsu;
+end;
+
 procedure TForm1.MenuItemEqualizacaoHSLClick(Sender: TObject);
 begin
   DesativarSobel;
@@ -774,8 +783,92 @@ begin
       Threshold := t - 1;
     end;
   end;
-  ShowMessage('Threshold OTSU encontrado: ' + IntToStr(Threshold));
   Limiarizacao(Threshold);
+end;
+
+procedure TForm1.BinarizacaoOtsu;
+var
+  i, j, t, Threshold : Integer;
+  w0, uT, uT_classe, SigB2, SigT2, nf, nmin, n, x, y : Double;
+  pI : array[1..256] of Double;
+  ni : array[1..256] of Double;
+  jMin, kMax : Integer;
+begin
+  n := (ImgWidth - 4.0) * (ImgHeight - 4.0);
+
+  for i := 1 to 256 do
+    ni[i] := 0.0;
+
+  for i := 2 to ImgWidth - 3 do
+   for j := 2 to ImgHeight - 3 do
+    ni[ImE[i, j] + 1] := ni[ImE[i, j] + 1] + 1.0;
+
+  for i := 1 to 256 do
+    pI[i] := ni[i] / n; // pi : probabilidade de ocorrer o valor i na imagem
+
+  uT := 0.0; // uT : média global da imagem
+  for i := 1 to 256 do
+    uT := uT + i * pI[i];
+
+  SigT2 := 0.0; // SigmaT2 : variância global da imagem
+  for i := 1 to 256 do
+    SigT2 := SigT2 + (i - uT) * (i - uT) * pI[i];
+
+  jMin := -1;
+  kMax := -1;
+  for i := 1 to 256 do
+  begin
+    if (jMin < 0) and (pI[i] > 0.0) then jMin := i; // acha o menor com pi[i] != 0
+    if (pI[i] > 0.0) then kMax := i;                 // acha o maior com pi[i] != 0
+  end;
+
+  nmin := -1.0;
+  Threshold := jMin;
+
+  for t := jMin to kMax do
+  begin
+    uT_classe := 0.0;
+    for i := 1 to t do
+      uT_classe := uT_classe + i * pI[i];
+
+    w0 := 0.0;
+    for i := 1 to t do
+      w0 := w0 + pI[i];
+
+    x := (uT * w0 - uT_classe);
+    x := x * x;
+    y := w0 * (1.0 - w0);
+
+    if y > 0.0 then
+      x := x / y
+    else
+      x := 0.0;
+
+    SigB2 := x;
+
+    if SigT2 > 0.0 then
+      nf := SigB2 / SigT2
+    else
+      nf := 0.0;
+
+    if nf >= nmin then
+    begin
+      nmin := nf;
+      Threshold := t - 1;
+    end;
+  end;
+
+  // Binarização com o threshold do OTSU
+  for i := 0 to ImgWidth - 1 do
+   for j := 0 to ImgHeight - 1 do
+    begin
+      if ImE[i, j] < Threshold then
+        ImS[i, j] := 0
+      else
+        ImS[i, j] := 255;
+
+      Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
 end;
 
 procedure TForm1.MenuItem6Click(Sender: TObject);
