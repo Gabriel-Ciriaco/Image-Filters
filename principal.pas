@@ -28,6 +28,7 @@ type
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     Laplaciano8: TMenuItem;
+    MenuInversaCosseno: TMenuItem;
     MenuItemBinarizacaoOtsu: TMenuItem;
     MenuItemLimiarizacaoOtsu: TMenuItem;
     MenuItemEqualizacaoHSL: TMenuItem;
@@ -73,6 +74,7 @@ type
     procedure Limiarizacao(t: Integer);
     procedure MenuItem4Click(Sender: TObject);
     procedure TransformacaoCosseno;
+    procedure TransformacaoCossenoInversa;
     procedure MenuItemBinarizacaoOtsuClick(Sender: TObject);
     procedure MenuItemEqualizacaoHSLClick(Sender: TObject);
     procedure MenuItemLimiarizacaoOtsuClick(Sender: TObject);
@@ -93,6 +95,10 @@ type
     procedure MenuItem7Click(Sender: TObject);
     procedure MenuItem8Click(Sender: TObject);
     procedure MenuItem9Click(Sender: TObject);
+    procedure MenuInversaCossenoClick(Sender: TObject);
+    procedure MenuPassaBaixaDCTClick(Sender: TObject);
+    procedure MenuPassaAltaDCTClick(Sender: TObject);
+    procedure Image2MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
     magnitudes : array of array of Integer; // Array dinâmico com as magnitudes.
     magDirecoes : array of array of Double;
@@ -109,6 +115,9 @@ var
   ImgWidth, ImgHeight: Integer;
   ImE, ImS: array of array of Integer;
   cor : TColor;
+  MatrizDCT: array of array of Double;
+  MatrizCosWidth, MatrizCosHeight: array of array of Double;
+  VisualizandoDCT: Boolean;
 
 implementation
 {$R *.lfm}
@@ -116,6 +125,7 @@ implementation
 procedure TForm1.DesativarSobel;
 begin
   SobelAtivo := False;
+  VisualizandoDCT := False; // Desativa flag de ruído em operações padrão
   EditMagnitude.Visible := False;
   EditDirecao.Visible := False;
 end;
@@ -537,9 +547,28 @@ var
   i, j, k: Integer;
   ci, cj, sum: Double;
   temp, result: array of array of Double;
+  maxVal: Double;
 begin
   SetLength(temp, ImgWidth, ImgHeight);
   SetLength(result, ImgWidth, ImgHeight);
+  SetLength(MatrizDCT, ImgWidth, ImgHeight);
+
+  // Pré-cálculo da matriz de cossenos
+  if (Length(MatrizCosWidth) <> ImgWidth) or (Length(MatrizCosWidth[0]) <> ImgWidth) then
+  begin
+    SetLength(MatrizCosWidth, ImgWidth, ImgWidth);
+    for i := 0 to ImgWidth - 1 do
+      for k := 0 to ImgWidth - 1 do
+        MatrizCosWidth[k, i] := Cos((2 * k + 1) * i * PI / (2 * ImgWidth));
+  end;
+
+  if (Length(MatrizCosHeight) <> ImgHeight) or (Length(MatrizCosHeight[0]) <> ImgHeight) then
+  begin
+    SetLength(MatrizCosHeight, ImgHeight, ImgHeight);
+    for j := 0 to ImgHeight - 1 do
+      for k := 0 to ImgHeight - 1 do
+        MatrizCosHeight[k, j] := Cos((2 * k + 1) * j * PI / (2 * ImgHeight));
+  end;
 
   // DCT nas linhas
   for i := 0 to ImgWidth - 1 do
@@ -547,7 +576,7 @@ begin
     begin
       sum := 0;
       for k := 0 to ImgWidth - 1 do
-        sum := sum + ImE[k, j] * Cos((2 * k + 1) * i * PI / (2 * ImgWidth));
+        sum := sum + ImE[k, j] * MatrizCosWidth[k, i];
 
       if i = 0 then
         ci := 1 / Sqrt(ImgWidth)
@@ -557,13 +586,14 @@ begin
       temp[i, j] := ci * sum;
     end;
 
+  maxVal := 0;
   // DCT nas colunas
   for i := 0 to ImgWidth - 1 do
     for j := 0 to ImgHeight - 1 do
     begin
       sum := 0;
       for k := 0 to ImgHeight - 1 do
-        sum := sum + temp[i, k] * Cos((2 * k + 1) * j * PI / (2 * ImgHeight));
+        sum := sum + temp[i, k] * MatrizCosHeight[k, j];
 
       if j = 0 then
         cj := 1 / Sqrt(ImgHeight)
@@ -571,13 +601,83 @@ begin
         cj := Sqrt(2) / Sqrt(ImgHeight);
 
       result[i, j] := cj * sum;
+      MatrizDCT[i, j] := result[i, j]; // Guarda o valor exato real da frequência
 
-      if result[i, j] < 0 then result[i, j] := 0
-      else if result[i, j] > 255 then result[i, j] := 255;
+      if Abs(result[i, j]) > maxVal then maxVal := Abs(result[i, j]);
+    end;
 
-      ImS[i, j] := Round(result[i, j]);
+  if maxVal = 0 then maxVal := 1;
+
+  // Renderização visual (apenas visual!)
+  for i := 0 to ImgWidth - 1 do
+    for j := 0 to ImgHeight - 1 do
+    begin
+      // Aplica escala logarítmica para ver melhor as frequências
+      ImS[i, j] := Round(255 * (Ln(1 + Abs(MatrizDCT[i, j])) / Ln(1 + maxVal)));
+
+      if ImS[i, j] < 0 then ImS[i, j] := 0
+      else if ImS[i, j] > 255 then ImS[i, j] := 255;
+
       Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
     end;
+
+  VisualizandoDCT := True;
+end;
+
+procedure TForm1.TransformacaoCossenoInversa;
+var
+  x, y, u, v: Integer;
+  cu, cv, sum: Double;
+  temp, result: array of array of Double;
+begin
+  SetLength(temp, ImgWidth, ImgHeight);
+  SetLength(result, ImgWidth, ImgHeight);
+
+  // 1. IDCT nas Colunas (Processando as frequências verticais 'v' para o espaço 'y')
+  for u := 0 to ImgWidth - 1 do
+    for y := 0 to ImgHeight - 1 do
+    begin
+      sum := 0;
+      for v := 0 to ImgHeight - 1 do
+      begin
+        if v = 0 then
+          cv := 1 / Sqrt(ImgHeight)
+        else
+          cv := Sqrt(2) / Sqrt(ImgHeight);
+
+        // Lemos de MatrizDCT que contém o valor flutuante perfeitamente exato (ou zerado pelos filtros)
+        sum := sum + cv * MatrizDCT[u, v] * MatrizCosHeight[y, v];
+      end;
+      temp[u, y] := sum;
+    end;
+
+  // 2. IDCT nas Linhas (Processando as frequências horizontais 'u' para o espaço 'x')
+  for x := 0 to ImgWidth - 1 do
+    for y := 0 to ImgHeight - 1 do
+    begin
+      sum := 0;
+      for u := 0 to ImgWidth - 1 do
+      begin
+        if u = 0 then
+          cu := 1 / Sqrt(ImgWidth)
+        else
+          cu := Sqrt(2) / Sqrt(ImgWidth);
+
+        sum := sum + cu * temp[u, y] * MatrizCosWidth[x, u];
+      end;
+
+      result[x, y] := sum;
+
+      // Limita os valores reconstruídos para o intervalo de cor [0, 255]
+      if result[x, y] < 0 then result[x, y] := 0
+      else if result[x, y] > 255 then result[x, y] := 255;
+
+      ImS[x, y] := Round(result[x, y]);
+
+      Image2.Canvas.Pixels[x, y] := RGB(ImS[x, y], ImS[x, y], ImS[x, y]);
+    end;
+
+  VisualizandoDCT := False; // Sai do modo visualização da frequência para o visual espacial
 end;
 
 procedure TForm1.MenuItemBinarizacaoOtsuClick(Sender: TObject);
@@ -946,6 +1046,12 @@ begin
   FiltroMediana;
 end;
 
+procedure TForm1.MenuInversaCossenoClick(Sender: TObject);
+begin
+  DesativarSobel;
+  TransformacaoCossenoInversa;
+end;
+
 procedure TForm1.MenuItem10Click(Sender: TObject);
 begin
   DesativarSobel;
@@ -1049,7 +1155,6 @@ begin
   FiltroPontoMedio;
 end;
 
-// Botões Adicionais (Ajudam nas Operações com Imagens).
 procedure TForm1.Image2MouseMove(Sender: TObject; Shift: TShiftState;
                                                          X, Y: Integer);
 var
@@ -1076,6 +1181,88 @@ begin
   begin
     EditMagnitude.Text := 'Magnitude: -';
     EditDirecao.Text := 'Direção: -';
+  end;
+end;
+
+procedure TForm1.Image2MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not VisualizandoDCT then Exit;
+
+  if (X >= 0) and (X < ImgWidth) and (Y >= 0) and (Y < ImgHeight) then
+  begin
+    MatrizDCT[X, Y] := 250000.0; // Adiciona um pico de energia grande
+    
+    // Feedback visual do ruído
+    ImS[X, Y] := 255;
+    Image2.Canvas.Pixels[X, Y] := RGB(255, 255, 255);
+  end;
+end;
+
+procedure TForm1.MenuPassaBaixaDCTClick(Sender: TObject);
+var
+  S: String;
+  Corte, u, v: Integer;
+  D: Double;
+begin
+  if not VisualizandoDCT then
+  begin
+    ShowMessage('Você precisa aplicar a Transformação do Cosseno primeiro!');
+    Exit;
+  end;
+
+  S := '50';
+  if InputQuery('Filtro Passa-Baixa (DCT)', 'Digite a frequência de corte:', S) then
+  begin
+    Corte := StrToIntDef(S, 50);
+
+    for u := 0 to ImgWidth - 1 do
+      for v := 0 to ImgHeight - 1 do
+      begin
+        D := Sqrt(u * u + v * v);
+        if D > Corte then
+        begin
+          MatrizDCT[u, v] := 0;
+          ImS[u, v] := 0;
+          Image2.Canvas.Pixels[u, v] := RGB(0, 0, 0); // Fica preto na visualização
+        end;
+      end;
+
+    // Aplica Inversa automaticamente
+    TransformacaoCossenoInversa;
+  end;
+end;
+
+procedure TForm1.MenuPassaAltaDCTClick(Sender: TObject);
+var
+  S: String;
+  Corte, u, v: Integer;
+  D: Double;
+begin
+  if not VisualizandoDCT then
+  begin
+    ShowMessage('Você precisa aplicar a Transformação do Cosseno primeiro!');
+    Exit;
+  end;
+
+  S := '20';
+  if InputQuery('Filtro Passa-Alta (DCT)', 'Digite a frequência de corte:', S) then
+  begin
+    Corte := StrToIntDef(S, 20);
+
+    for u := 0 to ImgWidth - 1 do
+      for v := 0 to ImgHeight - 1 do
+      begin
+        D := Sqrt(u * u + v * v);
+        if D <= Corte then
+        begin
+          MatrizDCT[u, v] := 0;
+          ImS[u, v] := 0;
+          Image2.Canvas.Pixels[u, v] := RGB(0, 0, 0); // Fica preto na visualização
+        end;
+      end;
+
+    // Aplica Inversa automaticamente
+    TransformacaoCossenoInversa;
   end;
 end;
 

@@ -1,60 +1,62 @@
 object Form1: TForm1
   Left = 386
-  Height = 689
+  Height = 861
   Top = 122
-  Width = 1155
+  Width = 1444
   Caption = 'Form1'
-  ClientHeight = 689
-  ClientWidth = 1155
+  ClientHeight = 861
+  ClientWidth = 1444
+  DesignTimePPI = 120
   Menu = MainMenu1
-  LCLVersion = '4.6.0.0'
+  LCLVersion = '4.4.0.0'
   object Image1: TImage
-    Left = 96
-    Height = 192
-    Top = 48
-    Width = 256
+    Left = 120
+    Height = 240
+    Top = 60
+    Width = 320
     Proportional = True
     Stretch = True
   end
   object Image2: TImage
-    Left = 616
-    Height = 192
-    Top = 48
-    Width = 256
+    Left = 770
+    Height = 240
+    Top = 60
+    Width = 320
+    OnMouseDown = Image2MouseDown
     OnMouseMove = Image2MouseMove
   end
   object Button1: TButton
-    Left = 442
-    Height = 25
-    Top = 134
-    Width = 75
+    Left = 552
+    Height = 31
+    Top = 168
+    Width = 94
     Caption = '<=='
     TabOrder = 0
     OnClick = Button1Click
   end
   object EditMagnitude: TEdit
-    Left = 397
-    Height = 23
-    Top = 301
-    Width = 80
+    Left = 496
+    Height = 28
+    Top = 376
+    Width = 100
     ReadOnly = True
     TabOrder = 1
     Text = 'Magnitude: -'
     Visible = False
   end
   object EditDirecao: TEdit
-    Left = 480
-    Height = 23
-    Top = 301
-    Width = 92
+    Left = 600
+    Height = 28
+    Top = 376
+    Width = 115
     ReadOnly = True
     TabOrder = 2
     Text = 'Direção: -'
     Visible = False
   end
   object MainMenu1: TMainMenu
-    Left = 328
-    Top = 440
+    Left = 410
+    Top = 550
     object Arquivo: TMenuItem
       Caption = 'Arquivo'
       object Abrir: TMenuItem
@@ -120,6 +122,18 @@ object Form1: TForm1
         Caption = 'Transformação Discreta do Cosseno'
         OnClick = MenuItem4Click
       end
+      object MenuInversaCosseno: TMenuItem
+        Caption = 'Transformação Inversa do Cosseno'
+        OnClick = MenuInversaCossenoClick
+      end
+      object MenuPassaBaixaDCT: TMenuItem
+        Caption = 'Filtro Passa-Baixa (DCT)'
+        OnClick = MenuPassaBaixaDCTClick
+      end
+      object MenuPassaAltaDCT: TMenuItem
+        Caption = 'Filtro Passa-Alta (DCT)'
+        OnClick = MenuPassaAltaDCTClick
+      end
       object MenuItemMinimo: TMenuItem
         Caption = 'Filtro Mínimo'
         OnClick = MenuItemMinimoClick
@@ -139,11 +153,11 @@ object Form1: TForm1
     end
   end
   object OpenDialog1: TOpenDialog
-    Left = 360
-    Top = 440
+    Left = 450
+    Top = 550
   end
   object SavePictureDialog1: TSavePictureDialog
-    Left = 392
-    Top = 440
+    Left = 490
+    Top = 550
   end
 end
