@@ -26,6 +26,7 @@ type
     MenuItem13: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
     Laplaciano8: TMenuItem;
     MenuItemBinarizacaoOtsu: TMenuItem;
     MenuItemLimiarizacaoOtsu: TMenuItem;
@@ -70,6 +71,8 @@ type
     procedure BordaSobel;
     procedure Compressao(c: Float; y: Float);
     procedure Limiarizacao(t: Integer);
+    procedure MenuItem4Click(Sender: TObject);
+    procedure TransformacaoCosseno;
     procedure MenuItemBinarizacaoOtsuClick(Sender: TObject);
     procedure MenuItemEqualizacaoHSLClick(Sender: TObject);
     procedure MenuItemLimiarizacaoOtsuClick(Sender: TObject);
@@ -529,6 +532,54 @@ begin
     end;
 end;
 
+procedure TForm1.TransformacaoCosseno;
+var
+  i, j, k: Integer;
+  ci, cj, sum: Double;
+  temp, result: array of array of Double;
+begin
+  SetLength(temp, ImgWidth, ImgHeight);
+  SetLength(result, ImgWidth, ImgHeight);
+
+  // DCT nas linhas
+  for i := 0 to ImgWidth - 1 do
+    for j := 0 to ImgHeight - 1 do
+    begin
+      sum := 0;
+      for k := 0 to ImgWidth - 1 do
+        sum := sum + ImE[k, j] * Cos((2 * k + 1) * i * PI / (2 * ImgWidth));
+
+      if i = 0 then
+        ci := 1 / Sqrt(ImgWidth)
+      else
+        ci := Sqrt(2) / Sqrt(ImgWidth);
+
+      temp[i, j] := ci * sum;
+    end;
+
+  // DCT nas colunas
+  for i := 0 to ImgWidth - 1 do
+    for j := 0 to ImgHeight - 1 do
+    begin
+      sum := 0;
+      for k := 0 to ImgHeight - 1 do
+        sum := sum + temp[i, k] * Cos((2 * k + 1) * j * PI / (2 * ImgHeight));
+
+      if j = 0 then
+        cj := 1 / Sqrt(ImgHeight)
+      else
+        cj := Sqrt(2) / Sqrt(ImgHeight);
+
+      result[i, j] := cj * sum;
+
+      if result[i, j] < 0 then result[i, j] := 0
+      else if result[i, j] > 255 then result[i, j] := 255;
+
+      ImS[i, j] := Round(result[i, j]);
+      Image2.Canvas.Pixels[i, j] := RGB(ImS[i, j], ImS[i, j], ImS[i, j]);
+    end;
+end;
+
 procedure TForm1.MenuItemBinarizacaoOtsuClick(Sender: TObject);
 begin
   DesativarSobel;
@@ -921,6 +972,14 @@ begin
 
   BordaSobel;
 end;
+
+
+procedure TForm1.MenuItem4Click(Sender: TObject);
+begin
+  DesativarSobel;
+  TransformacaoCosseno;
+end;
+
 
 function CorrigirDecimal(const S: String): String;
 begin
