@@ -5,7 +5,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, Menus, Math,
-  Buttons, StdCtrls, ExtDlgs, ComCtrls, Spin, Windows;
+  Buttons, StdCtrls, ExtDlgs, ComCtrls, Spin, Windows, uZoom;
 
 type
 
@@ -13,10 +13,14 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    btnZoomIn: TButton;
+    btnZoomOut: TButton;
     EditMagnitude: TEdit;
     EditDirecao: TEdit;
     Image1: TImage;
     Image2: TImage;
+    ScrollBox1: TScrollBox;
+    ScrollBox2: TScrollBox;
     MainMenu1: TMainMenu;
     Arquivo: TMenuItem;
     MenuItem1: TMenuItem;
@@ -99,6 +103,9 @@ type
     procedure MenuPassaBaixaDCTClick(Sender: TObject);
     procedure MenuPassaAltaDCTClick(Sender: TObject);
     procedure Image2MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure btnZoomInClick(Sender: TObject);
+    procedure btnZoomOutClick(Sender: TObject);
+    procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   private
     magnitudes : array of array of Integer; // Array dinâmico com as magnitudes.
     magDirecoes : array of array of Double;
@@ -1159,19 +1166,22 @@ procedure TForm1.Image2MouseMove(Sender: TObject; Shift: TShiftState;
                                                          X, Y: Integer);
 var
    magDirecao : Float;
+   RealX, RealY: Integer;
 begin
   if not SobelAtivo then Exit;
+  
+  RealX := ConverterX(X);
+  RealY := ConverterY(Y);
 
-  // Verifica se o mouse está dentro dos limites calculados (evitar erros de índice)
-  if (X >= 1) and (X <= ImgWidth - 2) and (Y >= 1) and (Y <= ImgHeight - 2) then
+  if (RealX >= 1) and (RealX <= ImgWidth - 2) and (RealY >= 1) and (RealY <= ImgHeight - 2) then
   begin
     if (magnitudes <> nil) and (magDirecoes <> nil) then
        begin
-         magDirecao := magDirecoes[X, Y] * (180 / PI);
+         magDirecao := magDirecoes[RealX, RealY] * (180 / PI);
 
          if magDirecao < 0 then magDirecao += 360;
 
-         EditMagnitude.Text := 'Magnitude: ' + IntToStr(magnitudes[X, Y]);
+         EditMagnitude.Text := 'Magnitude: ' + IntToStr(magnitudes[RealX, RealY]);
          EditDirecao.Text := 'Direção: ' +
                              FloatToStrF(magDirecao, ffFixed, 7, 2) + 'º';
 
@@ -1185,16 +1195,21 @@ begin
 end;
 
 procedure TForm1.Image2MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  RealX, RealY: Integer;
 begin
   if not VisualizandoDCT then Exit;
+  
+  RealX := ConverterX(X);
+  RealY := ConverterY(Y);
 
-  if (X >= 0) and (X < ImgWidth) and (Y >= 0) and (Y < ImgHeight) then
+  if (RealX >= 0) and (RealX < ImgWidth) and (RealY >= 0) and (RealY < ImgHeight) then
   begin
-    MatrizDCT[X, Y] := 250000.0; // Adiciona um pico de energia grande
+    MatrizDCT[RealX, RealY] := 250000.0; // Adiciona um pico de energia grande
     
     // Feedback visual do ruído
-    ImS[X, Y] := 255;
-    Image2.Canvas.Pixels[X, Y] := RGB(255, 255, 255);
+    ImS[RealX, RealY] := 255;
+    Image2.Canvas.Pixels[RealX, RealY] := RGB(255, 255, 255);
   end;
 end;
 
@@ -1289,41 +1304,66 @@ begin
   // Reseta a Imagem 2 se ela estiver preenchida.
   if (Image2.Picture.Graphic <> nil) then Image2.Picture.Clear;
 
+  // Força a criação do Bitmap interno da Image2 com o tamanho real
+  // Isso evita que o TImage crie uma malha distorcida do tamanho do Zoom quando os filtros rodarem
+  Image2.Picture.Bitmap.Width := Image1.Picture.Width;
+  Image2.Picture.Bitmap.Height := Image1.Picture.Height;
+
   DesativarSobel;
 
-  Image1.AutoSize := True;
+  Image1.AutoSize := False;
+  Image2.AutoSize := False;
+  
+  Image1.Stretch := True;
+  Image1.Proportional := True;
+  Image2.Stretch := True;
+  Image2.Proportional := True;
 
   ImgWidth := Image1.Picture.Width;
   ImgHeight := Image1.Picture.Height;
 
-  Image2.Width := Image1.Picture.Width;
-  Image2.Height := Image1.Picture.Height;
-
   SetLength(ImE, ImgWidth, ImgHeight);
   SetLength(ImS, ImgWidth, ImgHeight);
+  
+  // Limpar a Matriz de cossenos para forçar recálculo caso a imagem tenha tamanho diferente
+  SetLength(MatrizCosWidth, 0, 0);
+  SetLength(MatrizCosHeight, 0, 0);
 
-  // Posiciona a Imagem 2 em Largura do botão + 50% da largura da Imagem1
-  // O Image2 será posicionado logo após esse espaço
-  // Consideremos a distancia do meio na borda direita até o meio da borda esquerda.
-  Image2.Left := (Image1.Left + Image1.Width) + (Button1.Width + Image1.Width div 2);
-  Image2.Top := Image1.Top;
+  // Auto-ajusta o zoom inicial se a imagem for grande demais para a ScrollBox
+  if (ImgWidth > 600) or (ImgHeight > 600) then
+  begin
+    ZoomFactor := 550.0 / Max(ImgWidth, ImgHeight);
+    if ZoomFactor < 0.1 then ZoomFactor := 0.1;
+  end
+  else
+    ZoomFactor := 1.0;
 
-  // Posicionar o botao no meio entre as duas imagens.
-  Button1.Left := (Image1.Left + Image1.Width) + Image1.Width div 4;
-  Button1.Top := (Image1.Top + Image1.Height) div 2;
-
-  EditMagnitude.Left := Button1.Left - EditMagnitude.Width +Button1.Width div 2;
-  EditDirecao.Left := EditMagnitude.Left + EditMagnitude.Width;
-
-  EditMagnitude.Top := Image1.Top + Image1.Top div 2;
-  EditDirecao.Top := Image1.Top + Image1.Top div 2;
-
+  AplicarZoom(Image1, Image2, ImgWidth, ImgHeight);
 end;
 
 procedure TForm1.SalvarClick(Sender: TObject);
 begin
   SavePictureDialog1.DefaultExt := 'bmp';
   if (SavePictureDialog1.Execute()) then Image1.Picture.SaveToFile(SavePictureDialog1.FileName);
+end;
+
+procedure TForm1.btnZoomInClick(Sender: TObject);
+begin
+  AplicarZoomIn(Image1, Image2, ImgWidth, ImgHeight);
+end;
+
+procedure TForm1.btnZoomOutClick(Sender: TObject);
+begin
+  AplicarZoomOut(Image1, Image2, ImgWidth, ImgHeight);
+end;
+
+procedure TForm1.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+  if WheelDelta > 0 then
+    AplicarZoomIn(Image1, Image2, ImgWidth, ImgHeight)
+  else
+    AplicarZoomOut(Image1, Image2, ImgWidth, ImgHeight);
+  Handled := True;
 end;
 
 procedure TForm1.SairClick(Sender: TObject);
