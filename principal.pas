@@ -1299,6 +1299,9 @@ end;
 
 // Botões de Arquivo.
 procedure TForm1.AbrirClick(Sender: TObject);
+var
+  i, j: Integer;
+  corLocal: TColor;
 begin
   if (OpenDialog1.Execute()) then Image1.Picture.LoadFromFile(OpenDialog1.Filename);
   // Reseta a Imagem 2 se ela estiver preenchida.
@@ -1308,6 +1311,9 @@ begin
   // Isso evita que o TImage crie uma malha distorcida do tamanho do Zoom quando os filtros rodarem
   Image2.Picture.Bitmap.Width := Image1.Picture.Width;
   Image2.Picture.Bitmap.Height := Image1.Picture.Height;
+
+  // Evita erro de paleta ao salvar (Image palette is too big or absent)
+  Image2.Picture.Bitmap.PixelFormat := pf24bit;
 
   DesativarSobel;
 
@@ -1324,6 +1330,16 @@ begin
 
   SetLength(ImE, ImgWidth, ImgHeight);
   SetLength(ImS, ImgWidth, ImgHeight);
+  
+  // Popula silenciosamente o ImE com a escala de cinza da imagem carregada
+  // Isso previne que os filtros quebrem
+  // se o usuário não clicar antes em "Converter para Cinza"
+  for i := 0 to ImgWidth - 1 do
+    for j := 0 to ImgHeight - 1 do
+    begin
+      corLocal := Image1.Canvas.Pixels[i, j];
+      ImE[i, j] := (GetRValue(corLocal) + GetGValue(corLocal) + GetBValue(corLocal)) div 3;
+    end;
   
   // Limpar a Matriz de cossenos para forçar recálculo caso a imagem tenha tamanho diferente
   SetLength(MatrizCosWidth, 0, 0);

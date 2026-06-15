@@ -8,15 +8,19 @@ object Form1: TForm1
   ClientWidth = 1444
   DesignTimePPI = 120
   Menu = MainMenu1
-  OnMouseWheel = FormMouseWheel
   LCLVersion = '4.4.0.0'
+  OnMouseWheel = FormMouseWheel
   object ScrollBox1: TScrollBox
     Left = 20
     Height = 600
     Top = 60
     Width = 600
+    HorzScrollBar.Page = 320
     HorzScrollBar.Tracking = True
+    VertScrollBar.Page = 240
     VertScrollBar.Tracking = True
+    ClientHeight = 596
+    ClientWidth = 596
     TabOrder = 3
     object Image1: TImage
       Left = 0
@@ -32,18 +36,22 @@ object Form1: TForm1
     Height = 600
     Top = 60
     Width = 600
+    HorzScrollBar.Page = 320
     HorzScrollBar.Tracking = True
+    VertScrollBar.Page = 240
     VertScrollBar.Tracking = True
+    ClientHeight = 596
+    ClientWidth = 596
     TabOrder = 4
     object Image2: TImage
       Left = 0
       Height = 240
       Top = 0
       Width = 320
-      OnMouseDown = Image2MouseDown
-      OnMouseMove = Image2MouseMove
       Proportional = True
       Stretch = True
+      OnMouseDown = Image2MouseDown
+      OnMouseMove = Image2MouseMove
     end
   end
   object btnZoomIn: TButton
@@ -52,8 +60,8 @@ object Form1: TForm1
     Top = 16
     Width = 94
     Caption = 'Zoom In (+)'
-    OnClick = btnZoomInClick
     TabOrder = 5
+    OnClick = btnZoomInClick
   end
   object btnZoomOut: TButton
     Left = 128
@@ -61,8 +69,8 @@ object Form1: TForm1
     Top = 16
     Width = 94
     Caption = 'Zoom Out (-)'
-    OnClick = btnZoomOutClick
     TabOrder = 6
+    OnClick = btnZoomOutClick
   end
   object Button1: TButton
     Left = 640
@@ -125,6 +133,10 @@ object Form1: TForm1
         Caption = 'EqualizacaoHistograma'
         OnClick = MenuItem12Click
       end
+      object MenuItemEqualizacaoHSL: TMenuItem
+        Caption = 'Equalização HSL'
+        OnClick = MenuItemEqualizacaoHSLClick
+      end
       object MenuItem7: TMenuItem
         Caption = 'Adicionar Ruído'
         OnClick = MenuItem7Click
@@ -141,9 +153,17 @@ object Form1: TForm1
         Caption = 'Binarização'
         OnClick = MenuItem10Click
       end
+      object MenuItemBinarizacaoOtsu: TMenuItem
+        Caption = 'Binarização de Otsu'
+        OnClick = MenuItemBinarizacaoOtsuClick
+      end
       object MenuItem11: TMenuItem
         Caption = 'Filtro Laplaciano Vizinhança 4'
         OnClick = MenuItem11Click
+      end
+      object Laplaciano8: TMenuItem
+        Caption = 'Filtro Laplaciano Vizinhança 8'
+        OnClick = Laplaciano8Click
       end
       object MenuItem13: TMenuItem
         Caption = 'Borda de Sobel'
@@ -156,6 +176,10 @@ object Form1: TForm1
       object MenuItem2: TMenuItem
         Caption = 'Limiarização'
         OnClick = MenuItem2Click
+      end
+      object MenuItemLimiarizacaoOtsu: TMenuItem
+        Caption = 'Limiarização de Otsu'
+        OnClick = MenuItemLimiarizacaoOtsuClick
       end
       object MenuItem4: TMenuItem
         Caption = 'Transformação Discreta do Cosseno'
