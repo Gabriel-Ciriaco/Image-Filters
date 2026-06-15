@@ -87,6 +87,8 @@ type
     procedure EqualizacaoHSL;
     procedure LimiarizacaoOtsu;
     procedure BinarizacaoOtsu;
+    procedure Dilatacao;
+    procedure Erosao;
     procedure MenuItem1Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
@@ -102,6 +104,8 @@ type
     procedure MenuInversaCossenoClick(Sender: TObject);
     procedure MenuPassaBaixaDCTClick(Sender: TObject);
     procedure MenuPassaAltaDCTClick(Sender: TObject);
+    procedure MenuDilatacaoClick(Sender: TObject);
+    procedure MenuErosaoClick(Sender: TObject);
     procedure Image2MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure btnZoomInClick(Sender: TObject);
     procedure btnZoomOutClick(Sender: TObject);
@@ -1295,6 +1299,101 @@ begin
   for i := 0 to ImgWidth - 1 do
       for j := 0 to ImgHeight - 1 do
           ImE[i, j] := ImS[i, j];
+end;
+
+
+procedure TForm1.Dilatacao;
+var
+  x, y, i, j: Integer;
+  masc: array[0..2, 0..2] of Integer;
+begin
+  
+  // Elemento Estruturante (Cruz/Bola 3x3)
+  masc[0,0] := 0; masc[0,1] := 1; masc[0,2] := 0;
+  masc[1,0] := 1; masc[1,1] := 1; masc[1,2] := 1;
+  masc[2,0] := 0; masc[2,1] := 1; masc[2,2] := 0;
+
+  // Inicializa imagem de saída com fundo preto
+  for x := 0 to ImgWidth - 1 do
+    for y := 0 to ImgHeight - 1 do
+      ImS[x, y] := 0;
+
+  // Percorre imagem aplicando dilatação
+  for x := 1 to ImgWidth - 2 do
+    for y := 1 to ImgHeight - 2 do
+    begin
+      // Se pixel atual é objeto (maior que 0, ex: 255)
+      if ImE[x, y] > 0 then
+      begin
+        for i := -1 to 1 do
+          for j := -1 to 1 do
+          begin
+            if masc[i+1, j+1] = 1 then
+              ImS[x+i, y+j] := 255;
+          end;
+      end;
+    end;
+
+  for x := 0 to ImgWidth - 1 do
+    for y := 0 to ImgHeight - 1 do
+      Image2.Canvas.Pixels[x, y] := RGB(ImS[x, y], ImS[x, y], ImS[x, y]);
+end;
+
+procedure TForm1.Erosao;
+var
+  x, y, i, j: Integer;
+  masc: array[0..2, 0..2] of Integer;
+  remover: Boolean;
+begin
+
+  // Elemento Estruturante (Cruz/Bola 3x3)
+  masc[0,0] := 0; masc[0,1] := 1; masc[0,2] := 0;
+  masc[1,0] := 1; masc[1,1] := 1; masc[1,2] := 1;
+  masc[2,0] := 0; masc[2,1] := 1; masc[2,2] := 0;
+
+  // Inicializa imagem de saída com fundo preto
+  for x := 0 to ImgWidth - 1 do
+    for y := 0 to ImgHeight - 1 do
+      ImS[x, y] := 0;
+
+  // Percorre imagem aplicando erosão
+  for x := 1 to ImgWidth - 2 do
+    for y := 1 to ImgHeight - 2 do
+    begin
+      // Se pixel atual é objeto
+      if ImE[x, y] > 0 then
+      begin
+        remover := False;
+        for i := -1 to 1 do
+          for j := -1 to 1 do
+          begin
+            // Se máscara bate mas imagem subjacente é fundo (0), deve-se corroer o pixel
+            if (masc[i+1, j+1] = 1) and (ImE[x+i, y+j] = 0) then
+              remover := True;
+          end;
+
+        if remover then
+          ImS[x, y] := 0
+        else
+          ImS[x, y] := 255;
+      end;
+    end;
+
+  for x := 0 to ImgWidth - 1 do
+    for y := 0 to ImgHeight - 1 do
+      Image2.Canvas.Pixels[x, y] := RGB(ImS[x, y], ImS[x, y], ImS[x, y]);
+end;
+
+procedure TForm1.MenuDilatacaoClick(Sender: TObject);
+begin
+  DesativarSobel;
+  Dilatacao;
+end;
+
+procedure TForm1.MenuErosaoClick(Sender: TObject);
+begin
+  DesativarSobel;
+  Erosao;
 end;
 
 // Botões de Arquivo.

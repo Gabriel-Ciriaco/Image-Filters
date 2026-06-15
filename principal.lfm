@@ -213,6 +213,14 @@ object Form1: TForm1
         Caption = 'Pseudo Cores'
         OnClick = MenuItemPseudoCoresClick
       end
+      object MenuDilatacao: TMenuItem
+        Caption = 'Dilatação'
+        OnClick = MenuDilatacaoClick
+      end
+      object MenuErosao: TMenuItem
+        Caption = 'Erosão'
+        OnClick = MenuErosaoClick
+      end
     end
   end
   object OpenDialog1: TOpenDialog
